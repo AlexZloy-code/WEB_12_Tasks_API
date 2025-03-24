@@ -55,6 +55,7 @@ class Example(QWidget):
         self.checkbox1 = QCheckBox(self)
         self.checkbox1.move(500, 75)
         self.checkbox1.setText('почт. индекс')
+        self.checkbox1.clicked.connect(self.run)
         
 
     def mousePressEvent(self, event):
@@ -94,7 +95,7 @@ class Example(QWidget):
         else:
             if not self.pt:
                 self.pt = pt_edit(self.ask.text())
-            else:
+            elif pt_edit(self.ask.text()) not in self.pt:
                 self.pt += '~' + pt_edit(self.ask.text())
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
@@ -111,6 +112,7 @@ class Example(QWidget):
                 self.pt = '~'.join(self.pt.split('~')[:-1])
             self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
             self.search_result.setText(f'Адрес: ')
+            # self.ask.setText('') # Если захотите очищать поле ввода при сбросе поиска разкоментите
 
 
 def map_edit(x, y, z, theme, pt):
