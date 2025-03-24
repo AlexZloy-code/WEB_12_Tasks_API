@@ -51,6 +51,10 @@ class Example(QWidget):
         self.reset_button.move(500, 26)
         self.reset_button.setText("Сброс поиска")
         self.reset_button.clicked.connect(self.reset)
+
+        self.checkbox1 = QCheckBox(self)
+        self.checkbox1.move(500, 75)
+        self.checkbox1.setText('почт. индекс')
         
 
     def mousePressEvent(self, event):
@@ -77,8 +81,12 @@ class Example(QWidget):
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
     def run(self):
-        adress = get_info(self.ask.text())
-        self.search_result.setText(f'Адрес: {adress}')
+        info = get_info(self.ask.text())
+        adress = info[0]
+        if self.checkbox1.isChecked():
+            self.search_result.setText(f'Адрес: {adress}, индекс: {info[1]}')
+        else:
+            self.search_result.setText(f'Адрес: {adress}')
 
         self.x, self.y = float(pt_edit(self.ask.text()).split(',')[0]), float(pt_edit(self.ask.text()).split(',')[1])
         if mode:
@@ -162,7 +170,12 @@ def get_info(geo):
     if response:
         json_response = response.json()
         toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
-        return toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+        toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+        try:
+            toponym_index = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
+        except KeyError:
+            toponym_index = None
+        return (toponym_address, toponym_index)
     
 
 
