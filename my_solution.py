@@ -68,10 +68,7 @@ class Example(QWidget):
 
     def run(self):
         self.x, self.y = float(pt_edit(self.ask.text()).split(',')[0]), float(pt_edit(self.ask.text()).split(',')[1])
-        if not self.pt:
-            self.pt = pt_edit(self.ask.text())
-        else:
-            self.pt += '~' + pt_edit(self.ask.text())
+        self.pt = pt_edit(self.ask.text())
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
     def run1(self):
