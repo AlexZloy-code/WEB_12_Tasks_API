@@ -59,7 +59,30 @@ class Example(QWidget):
         
 
     def mousePressEvent(self, event):
+        lon, lat = self.pixel_to_coords(event.pos().x(), event.pos().y(),
+                                        self.width(), self.height(),
+                                        self.x, self.y, self.z)
+        
+        info = get_info(f'{lon},{lat}')
+        adress = info[0]
+        if self.checkbox1.isChecked():
+            self.search_result.setText(f'Адрес: {adress}, индекс: {info[1]}')
+        else:
+            self.search_result.setText(f'Адрес: {adress}')
+
+        if mode or not self.pt:
+            self.pt = f'{lon},{lat}'
+        elif f'{lon},{lat}' not in self.pt:
+            self.pt += '~' + f'{lon},{lat}'
+ 
+        self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
         self.setFocus()
+
+    def pixel_to_coords(self, pixel_x, pixel_y, map_width, map_height, x, y, z):
+        lon = x + (pixel_x - map_width / 2) * (360 / (256 * 2 ** z))
+        lat = y - (pixel_y - map_height / 2) * (180 / (256 * 2 ** z))
+
+        return lon, lat
 
     def keyPressEvent(self, e):
         if e.key() == 16777220:
@@ -90,13 +113,12 @@ class Example(QWidget):
             self.search_result.setText(f'Адрес: {adress}')
 
         self.x, self.y = float(pt_edit(self.ask.text()).split(',')[0]), float(pt_edit(self.ask.text()).split(',')[1])
-        if mode:
+
+        if mode or not self.pt:
             self.pt = pt_edit(self.ask.text())
-        else:
-            if not self.pt:
-                self.pt = pt_edit(self.ask.text())
-            elif pt_edit(self.ask.text()) not in self.pt:
-                self.pt += '~' + pt_edit(self.ask.text())
+        elif pt_edit(self.ask.text()) not in self.pt:
+            self.pt += '~' + pt_edit(self.ask.text())
+        
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
     def run1(self):
@@ -138,10 +160,11 @@ def map_edit(x, y, z, theme, pt):
         }
 
         response = requests.get("http://static-maps.yandex.ru/1.x/", params=geocoder_params)
-    map_file = "map.png"
-    with open("map.png", "wb") as file:
-        file.write(response.content)
-    return QPixmap(map_file)
+    if response:
+        map_file = "map.png"
+        with open("map.png", "wb") as file:
+            file.write(response.content)
+        return QPixmap(map_file)
 
 
 def pt_edit(answer):
