@@ -20,7 +20,6 @@ def map_edit(x, y, z):
     return map_file
 
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--x", type=float, default=30.267808)
 parser.add_argument("--y", type=float, default=59.866590)
@@ -36,7 +35,8 @@ pygame.init()
 pygame.display.set_caption('API 2')
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((600, 450))
-up, down = False, False
+zoom_plus, zoom_minus = False, False
+left, right, up, down = False, False, False, False
 running = True
 
 while running:
@@ -45,30 +45,49 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_PAGEUP:
+                zoom_plus = True
+            if event.key == pygame.K_PAGEDOWN:
+                zoom_minus = True
+            if event.key == pygame.K_UP:
                 up = True
-            elif event.key == pygame.K_PAGEDOWN:
+            elif event.key == pygame.K_DOWN:
                 down = True
+            elif event.key == pygame.K_RIGHT:
+                right = True
+            elif event.key == pygame.K_LEFT:
+                left = True
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_PAGEUP:
+                zoom_plus = False
+            if event.key == pygame.K_PAGEDOWN:
+                zoom_minus = False
+            if event.key == pygame.K_UP:
                 up = False
-            elif event.key == pygame.K_PAGEDOWN:
+            elif event.key == pygame.K_DOWN:
                 down = False
+            elif event.key == pygame.K_RIGHT:
+                right = False
+            elif event.key == pygame.K_LEFT:
+                left = False
 
     screen.fill((0, 0, 0))
 
-    if up and z < 21:
+    if zoom_plus and z < 21:
         z += 1
-
-        os.remove(map_file)
-        map_file = map_edit(x, y, z)
-    elif down and z > 2:
+    elif zoom_minus and z > 1:
         z -= 1
 
-        os.remove(map_file)
-        map_file = map_edit(x, y, z)
+    if up and y < 85:
+        y += 1
+    elif down and y > -85:
+        y -= 1
+    elif right and x < 175:
+        x += 1
+    elif left and x > -175:
+        x -= 1
 
-    screen.blit(pygame.image.load(map_file), (0, 0))
-    clock.tick(60)
+    screen.blit(pygame.image.load(map_edit(x, y, z)), (0, 0))
+    clock.tick(50)
     pygame.display.flip()
 pygame.quit()
 
