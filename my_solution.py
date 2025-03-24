@@ -5,6 +5,8 @@ import requests
 from PyQt6.QtWidgets import QWidget, QApplication, QPushButton, QLineEdit, QLabel, QCheckBox
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtCore import QSize
+from PyQt6.QtCore import Qt
+
 
 class Example(QWidget):
     def __init__(self):
@@ -56,26 +58,44 @@ class Example(QWidget):
         self.checkbox1.move(500, 75)
         self.checkbox1.setText('почт. индекс')
         self.checkbox1.clicked.connect(self.run)
-        
 
     def mousePressEvent(self, event):
         lon, lat = self.pixel_to_coords(event.pos().x(), event.pos().y(),
-                                        self.width(), self.height(),
-                                        self.x, self.y, self.z)
-        
+                                    self.width(), self.height(),
+                                    self.x, self.y, self.z)
         info = get_info(f'{lon},{lat}')
-        adress = info[0]
-        if self.checkbox1.isChecked():
-            self.search_result.setText(f'Адрес: {adress}, индекс: {info[1]}')
-        else:
-            self.search_result.setText(f'Адрес: {adress}')
 
         if mode or not self.pt:
             self.pt = f'{lon},{lat}'
         elif f'{lon},{lat}' not in self.pt:
             self.pt += '~' + f'{lon},{lat}'
- 
-        self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
+
+        if event.button() == Qt.MouseButton.LeftButton:
+            
+            if self.checkbox1.isChecked():
+                self.search_result.setText(f'Адрес: {info[0]}, индекс: {info[1]}')
+            else:
+                self.search_result.setText(f'Адрес: {info[0]}')
+            
+            self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
+
+        elif event.button() == Qt.MouseButton.RightButton:
+            
+            organization = get_organizations(self.pt.split('~')[-1],{info[0]})
+            print(organization)
+            if organization:
+                if self.checkbox1.isChecked():
+                    self.search_result.setText(f'Адрес: {info[0]}, организация: {organization}, индекс: {info[1]}')
+                else:
+                    self.search_result.setText(f'Адрес: {info[0]}, организация: {organization}')
+            else:
+                if self.checkbox1.isChecked():
+                    self.search_result.setText(f'Адрес: {info[0]}, индекс: {info[1]}')
+                else:
+                    self.search_result.setText(f'Адрес: {info[0]}')
+
+            self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
+
         self.setFocus()
 
     def pixel_to_coords(self, pixel_x, pixel_y, map_width, map_height, x, y, z):
@@ -201,6 +221,30 @@ def get_info(geo):
         except KeyError:
             toponym_index = None
         return (toponym_address, toponym_index)
+    
+
+def get_organizations(point, adress):
+    search_api_server = "https://search-maps.yandex.ru/v1/"
+    api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    degree_distance = 50 / (111 * 100)
+    spn = f'{degree_distance},{degree_distance}'
+    search_params = {
+        "apikey": api_key,
+        "lang": "ru_RU",
+        "text": adress,
+        "ll": point,
+        "spn": spn,
+        'rspn': '1',
+        "results": '1',
+        "type": "biz"
+    }
+
+    response = requests.get(search_api_server, params=search_params)
+    print(response, response.url)
+    try:
+        return response.json()['features'][0]['properties']["CompanyMetaData"]['name']
+    except Exception:
+        return None
     
 
 
