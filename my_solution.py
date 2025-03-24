@@ -41,6 +41,11 @@ class Example(QWidget):
         self.button_2.setIconSize(QSize(20, 20))
         self.button_2.move(20, 20)
         self.button_2.clicked.connect(self.run1)
+
+        self.reset_button = QPushButton(self)
+        self.reset_button.move(0, 0)
+        self.reset_button.setText("Сброс поискового результата")
+        self.reset_button.clicked.connect(self.reset)
         
 
     def mousePressEvent(self, event):
@@ -68,13 +73,27 @@ class Example(QWidget):
 
     def run(self):
         self.x, self.y = float(pt_edit(self.ask.text()).split(',')[0]), float(pt_edit(self.ask.text()).split(',')[1])
-        self.pt = pt_edit(self.ask.text())
+        if mode:
+            self.pt = pt_edit(self.ask.text())
+        else:
+            if not self.pt:
+                self.pt = pt_edit(self.ask.text())
+            else:
+                self.pt += '~' + pt_edit(self.ask.text())
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
     def run1(self):
         self.theme = 1 - self.theme
         self.button_2.setIcon(QIcon(f'static/{self.theme_image[self.theme]}'))
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
+
+    def reset(self):
+        if self.pt:
+            if mode:
+                self.pt = ''
+            else:
+                self.pt = '~'.join(self.pt.split('~')[:-1])
+            self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
 
 def map_edit(x, y, z, theme, pt):
@@ -123,6 +142,9 @@ def pt_edit(answer):
 
 
 if __name__ == '__main__':
+
+    mode = 1 # 0 - показывается много объектов, 1 - показывается 1 объект
+
     app = QApplication(sys.argv)
     ex = Example()
     ex.show()
