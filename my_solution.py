@@ -2,7 +2,7 @@ import sys
 import os
 
 import requests
-from PyQt6.QtWidgets import QWidget, QApplication, QPushButton, QLineEdit, QLabel
+from PyQt6.QtWidgets import QWidget, QApplication, QPushButton, QLineEdit, QLabel, QCheckBox
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtCore import QSize
 
@@ -27,6 +27,11 @@ class Example(QWidget):
         self.map = QLabel(self)
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
+        self.search_result = QLabel(self)
+        self.search_result.move(10, 420)
+        self.search_result.resize(600, 25)
+        self.search_result.setText('Адрес: ')
+
         self.ask = QLineEdit(self)
         self.ask.move(500, 0)
         self.ask.resize(90, 25)
@@ -43,8 +48,8 @@ class Example(QWidget):
         self.button_2.clicked.connect(self.run1)
 
         self.reset_button = QPushButton(self)
-        self.reset_button.move(0, 0)
-        self.reset_button.setText("Сброс поискового результата")
+        self.reset_button.move(500, 26)
+        self.reset_button.setText("Сброс поиска")
         self.reset_button.clicked.connect(self.reset)
         
 
@@ -72,6 +77,9 @@ class Example(QWidget):
         self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
 
     def run(self):
+        adress = get_info(self.ask.text())
+        self.search_result.setText(f'Адрес: {adress}')
+
         self.x, self.y = float(pt_edit(self.ask.text()).split(',')[0]), float(pt_edit(self.ask.text()).split(',')[1])
         if mode:
             self.pt = pt_edit(self.ask.text())
@@ -94,6 +102,7 @@ class Example(QWidget):
             else:
                 self.pt = '~'.join(self.pt.split('~')[:-1])
             self.map.setPixmap(map_edit(self.x, self.y, self.z, self.themes[self.theme], self.pt))
+            self.search_result.setText(f'Адрес: ')
 
 
 def map_edit(x, y, z, theme, pt):
@@ -139,11 +148,27 @@ def pt_edit(answer):
         json_response = response.json()
         x, y = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos'].split()
         return f'{x},{y}'
+    
+
+def get_info(geo):
+    geocoder_params = {
+        'apikey': '8013b162-6b42-4997-9691-77b7074026e0',
+        'geocode': geo,
+        'results': 1,
+        'format': 'json'
+    }
+    
+    response = requests.get('http://geocode-maps.yandex.ru/1.x/', params=geocoder_params)
+    if response:
+        json_response = response.json()
+        toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+        return toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+    
 
 
 if __name__ == '__main__':
 
-    mode = 1 # 0 - показывается много объектов, 1 - показывается 1 объект
+    mode = 0 # 0 - показывается много объектов, 1 - показывается 1 объект
 
     app = QApplication(sys.argv)
     ex = Example()
